@@ -185,15 +185,29 @@ export function EpisodesView({
 
   const playEpisode = useCallback(
     (episodeId: string) => {
+      const oldMetaCopy = { ...meta };
       if (loadingState.value) {
         const newData = setPlayerMeta(loadingState.value.fullData, episodeId);
+        window.parent.postMessage(
+          {
+            type: "episodeChanged",
+            episodeNumber: newData?.episode?.number,
+            seasonNumber: newData?.season?.number,
+            tmdbId: oldMetaCopy?.tmdbId,
+            imdbId: oldMetaCopy?.imdbId,
+            oldEpisodeNumber: oldMetaCopy?.episode?.number,
+            oldSeasonNumber: oldMetaCopy?.season?.number,
+          },
+          "*",
+        );
         if (newData) onChange?.(newData);
       }
+
       // prevent router clear here, otherwise its done double
       // player already switches route after meta change
       router.close(true);
     },
-    [setPlayerMeta, loadingState, router, onChange],
+    [setPlayerMeta, loadingState, router, onChange, meta],
   );
 
   const toggleWatchStatus = useCallback(

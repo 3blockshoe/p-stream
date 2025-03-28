@@ -12,6 +12,7 @@ import {
   getMediaDetails,
   getMediaPoster,
   getMovieFromExternalId,
+  getNumberedIDs,
   mediaTypeToTMDB,
 } from "./tmdb";
 import {
@@ -194,11 +195,16 @@ export async function convertLegacyUrl(
 
   if (isLegacyMediaType(url)) {
     const details = await getMediaDetails(id, TMDBContentTypes.TV);
-    return `/media/${TMDBIdToUrlId(
+    const newPath = `/media/${TMDBIdToUrlId(
       MWMediaType.SERIES,
       details.id.toString(),
       details.name,
     )}${suffix}`;
+    // Preserve query parameters
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.toString()
+      ? `${newPath}?${searchParams.toString()}`
+      : newPath;
   }
 
   const mediaType = TMDBMediaToMediaType(type as TMDBContentTypes);
@@ -212,11 +218,82 @@ export async function convertLegacyUrl(
   if (imdbId && mediaType === MWMediaType.MOVIE) {
     const movieId = await getMovieFromExternalId(imdbId);
     if (movieId) {
-      return `/media/${TMDBIdToUrlId(mediaType, movieId, meta.meta.title)}`;
+      const newPath = `/media/${TMDBIdToUrlId(mediaType, movieId, meta.meta.title)}`;
+      // Preserve query parameters
+      const searchParams = new URLSearchParams(window.location.search);
+      return searchParams.toString()
+        ? `${newPath}?${searchParams.toString()}`
+        : newPath;
     }
 
     if (tmdbId) {
-      return `/media/${TMDBIdToUrlId(mediaType, tmdbId, meta.meta.title)}`;
+      const newPath = `/media/${TMDBIdToUrlId(mediaType, tmdbId, meta.meta.title)}`;
+      // Preserve query parameters
+      const searchParams = new URLSearchParams(window.location.search);
+      return searchParams.toString()
+        ? `${newPath}?${searchParams.toString()}`
+        : newPath;
     }
   }
+}
+
+export function isEmbedUrl(url: string): boolean {
+  if (url.startsWith("/embed/")) return true;
+  return false;
+}
+
+export function isTVEmbedMediaType(url: string): boolean {
+  if (url.startsWith("/embed/tmdb-tv")) return true;
+  return false;
+}
+
+export async function convertEmbedUrl(
+  url: string,
+): Promise<string | undefined> {
+  const urlParts = url.split("/").slice(2);
+
+  const [, type, id] = urlParts[0].split("-", 3);
+  const suffix = urlParts
+    .slice(1)
+    .map((v) => `/${v}`)
+    .join("");
+
+  if (!id) return undefined;
+
+  if (type === "tv") {
+    const suffixParts = suffix.split("/").slice(1);
+    const suffixIDs = await getNumberedIDs(
+      id,
+      suffixParts[0],
+      suffixParts[1],
+    ).then((v) => (v ? `${v.season}/${v.episode}` : ""));
+
+    const details = await getMediaDetails(id, TMDBContentTypes.TV);
+    const newPath = `/media/${TMDBIdToUrlId(
+      MWMediaType.SERIES,
+      details.id.toString(),
+      details.name,
+    )}/${suffixIDs}`;
+    // Preserve query parameters
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.toString()
+      ? `${newPath}?${searchParams.toString()}`
+      : newPath;
+  }
+
+  if (type === "movie") {
+    const details = await getMediaDetails(id, TMDBContentTypes.MOVIE);
+    const newPath = `/media/${TMDBIdToUrlId(
+      MWMediaType.MOVIE,
+      details.id.toString(),
+      details.title,
+    )}`;
+    // Preserve query parameters
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.toString()
+      ? `${newPath}?${searchParams.toString()}`
+      : newPath;
+  }
+
+  return undefined;
 }

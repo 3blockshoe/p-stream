@@ -17,22 +17,27 @@ export function NotFoundPart() {
       <Helmet>
         <title>{t("notFound.badge")}</title>
       </Helmet>
-      <Navigation />
       <div className="flex h-full flex-1 flex-col items-center justify-center p-5 text-center">
         <ErrorLayout>
           <ErrorContainer>
             <IconPill icon={Icons.EYE_SLASH}>{t("notFound.badge")}</IconPill>
             <Title>{t("notFound.title")}</Title>
             <Paragraph>{t("notFound.message")}</Paragraph>
-            <div className="flex gap-3">
-              <Button
-                href="/"
-                theme="secondary"
-                padding="md:px-12 p-2.5"
-                className="mt-6"
+            <Paragraph>
+              This page isn&apos;t available on the embed! <br />
+              If you believe this is an error, please report it to the{" "}
+              <a
+                href="https://discord.gg/7z6znYgrTG"
+                target="_blank"
+                rel="noreferrer"
+                className="text-type-link whitespace-nowrap"
               >
-                {t("notFound.goHome")}
-              </Button>
+                {" "}
+                P-Stream Discord
+              </a>{" "}
+              server.
+            </Paragraph>
+            <div className="flex gap-3">
               <Button
                 onClick={() => window.location.reload()}
                 theme="purple"

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { VideoPlayerButton } from "@/components/player/internals/Button";
@@ -15,9 +16,71 @@ export function Time(props: { short?: boolean }) {
     time,
     draggingTime,
   } = usePlayerStore((s) => s.progress);
+  const meta = usePlayerStore((s) => s.meta);
   const { isSeeking } = usePlayerStore((s) => s.interface);
   const { t } = useTranslation();
   const hasHours = durationExceedsHour(timeDuration);
+
+  // Use refs to store the last update time and timeout ID
+  const lastUpdateRef = useRef<number>(0);
+  const timeoutRef = useRef<number | null>(null);
+
+  // Send current time via postMessage with throttling
+  useEffect(() => {
+    const currentTime = Math.min(
+      Math.max(isSeeking ? draggingTime : time, 0),
+      timeDuration,
+    );
+
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastUpdateRef.current;
+    const THROTTLE_MS = 1000; // 1 second
+
+    // Clear any existing timeout
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // If enough time has passed, send update immediately
+    if (timeSinceLastUpdate >= THROTTLE_MS) {
+      window.parent.postMessage(
+        {
+          type: "playerTimeUpdate",
+          time: currentTime,
+          duration: timeDuration,
+          tmdbId: meta?.tmdbId,
+          imdbId: meta?.imdbId,
+        },
+        "*",
+      );
+      lastUpdateRef.current = now;
+    } else {
+      // Otherwise, schedule an update
+      timeoutRef.current = window.setTimeout(() => {
+        window.parent.postMessage(
+          {
+            type: "playerTimeUpdate",
+            time: currentTime,
+            duration: timeDuration,
+            tmdbId: meta?.tmdbId,
+            imdbId: meta?.imdbId,
+          },
+          "*",
+        );
+        lastUpdateRef.current = Date.now();
+        timeoutRef.current = null;
+      }, THROTTLE_MS - timeSinceLastUpdate);
+    }
+
+    // Cleanup function to clear any pending timeout
+    return () => {
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [time, draggingTime, isSeeking, timeDuration, meta]);
 
   function toggleMode() {
     setTimeFormat(

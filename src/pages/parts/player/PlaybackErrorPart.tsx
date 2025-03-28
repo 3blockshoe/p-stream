@@ -59,14 +59,32 @@ export function PlaybackErrorPart() {
           </Button>
         </div>
         <div className="flex gap-3">
-          <Button
-            href="/"
-            theme="secondary"
-            padding="md:px-12 p-2.5"
-            className="mt-6"
-          >
-            {t("player.playbackError.homeButton")}
-          </Button>
+          {(() => {
+            const backlink = new URLSearchParams(window.location.search).get(
+              "backlink",
+            );
+
+            // Only show backlink if it comes from URL parameter, and strip any quotes
+            if (backlink) {
+              // Remove any surrounding quotes from the URL
+              const cleanUrl = backlink.replace(/^["'](.*)["']$/, "$1");
+
+              return (
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.parent.location.href = cleanUrl;
+                  }}
+                  theme="secondary"
+                  padding="md:px-12 p-2.5"
+                  className="mt-6"
+                >
+                  {t("player.scraping.notFound.homeButton")}
+                </Button>
+              );
+            }
+            return null;
+          })()}
           <Button
             theme="secondary"
             padding="md:px-12 p-2.5"

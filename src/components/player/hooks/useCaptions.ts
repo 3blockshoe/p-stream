@@ -5,6 +5,7 @@ import { downloadCaption, downloadWebVTT } from "@/backend/helpers/subs";
 import { Caption } from "@/stores/player/slices/source";
 import { usePlayerStore } from "@/stores/player/store";
 import { useSubtitleStore } from "@/stores/subtitles";
+import { getLanguageOrder } from "@/utils/language";
 
 import {
   filterDuplicateCaptionCues,
@@ -110,7 +111,7 @@ export function useCaptions() {
   }, [setCaption, setLanguage, setIsOpenSubtitles]);
 
   const selectLastUsedLanguage = useCallback(async () => {
-    const language = lastSelectedLanguage ?? "en";
+    const language = lastSelectedLanguage ?? getLanguageOrder()[0];
     await selectLanguage(language);
     return true;
   }, [lastSelectedLanguage, selectLanguage]);

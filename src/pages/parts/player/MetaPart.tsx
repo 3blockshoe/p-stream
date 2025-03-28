@@ -147,14 +147,6 @@ export function MetaPart(props: MetaPartProps) {
           </IconPill>
           <Title>{t("player.metadata.legal.title")}</Title>
           <Paragraph>{t("player.metadata.legal.text")}</Paragraph>
-          <Button
-            href="/"
-            theme="purple"
-            padding="md:px-12 p-2.5"
-            className="mt-6"
-          >
-            {t("player.metadata.failed.homeButton")}
-          </Button>
         </ErrorContainer>
       </ErrorLayout>
     );
@@ -169,14 +161,6 @@ export function MetaPart(props: MetaPartProps) {
           </IconPill>
           <Title>{t("player.metadata.api.text")}</Title>
           <Paragraph>{t("player.metadata.api.title")}</Paragraph>
-          <Button
-            href="/"
-            theme="purple"
-            padding="md:px-12 p-2.5"
-            className="mt-6"
-          >
-            {t("player.metadata.failed.homeButton")}
-          </Button>
         </ErrorContainer>
       </ErrorLayout>
     );
@@ -191,14 +175,6 @@ export function MetaPart(props: MetaPartProps) {
           </IconPill>
           <Title>{t("player.metadata.failed.title")}</Title>
           <Paragraph>{t("player.metadata.failed.text")}</Paragraph>
-          <Button
-            href="/"
-            theme="purple"
-            padding="md:px-12 p-2.5"
-            className="mt-6"
-          >
-            {t("player.metadata.failed.homeButton")}
-          </Button>
         </ErrorContainer>
       </ErrorLayout>
     );
@@ -213,14 +189,6 @@ export function MetaPart(props: MetaPartProps) {
           </IconPill>
           <Title>{t("player.metadata.notFound.title")}</Title>
           <Paragraph>{t("player.metadata.notFound.text")}</Paragraph>
-          <Button
-            href="/"
-            theme="purple"
-            padding="md:px-12 p-2.5"
-            className="mt-6"
-          >
-            {t("player.metadata.notFound.homeButton")}
-          </Button>
         </ErrorContainer>
       </ErrorLayout>
     );

@@ -121,12 +121,32 @@ export function getPrettyLanguageNameFromLocale(locale: string): string | null {
 }
 
 /**
+ * Get language order from URL parameter if present, otherwise return default order
+ * @returns Array of language codes in order
+ */
+export function getLanguageOrder(): string[] {
+  if (typeof window === "undefined") return languageOrder;
+
+  try {
+    // Use URL constructor to properly parse the URL
+    const url = new URL(window.location.href);
+    const langOrderParam = url.searchParams.get("language-order");
+    if (!langOrderParam) return languageOrder;
+
+    return langOrderParam.split(",").map((lang) => lang.trim());
+  } catch (e) {
+    // If URL parsing fails for any reason, return default order
+    return languageOrder;
+  }
+}
+
+/**
  * Sort locale codes by occurrence, rest on alphabetical order
  * @param langCodes list language codes to sort
  * @returns sorted version of inputted list
  */
 export function sortLangCodes(langCodes: string[]) {
-  const languagesOrder = [...languageOrder].reverse(); // Reverse is necessary, not sure why
+  const languagesOrder = [...getLanguageOrder()].reverse(); // Reverse is necessary, not sure why
 
   const results = langCodes.sort((a, b) => {
     const langOrderA = languagesOrder.findIndex(

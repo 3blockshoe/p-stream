@@ -4,7 +4,7 @@ import "./stores/__old/imports";
 import "@/setup/ga";
 import "@/assets/css/index.css";
 
-import { StrictMode, Suspense, useCallback } from "react";
+import { StrictMode, Suspense, useCallback, useEffect } from "react";
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
@@ -177,6 +177,19 @@ function ExtensionStatus() {
 const container = document.getElementById("root");
 const root = createRoot(container!);
 
+function ZoomSetter() {
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const scale = parseFloat(searchParams.get("scale") ?? "1");
+
+    if (!Number.isNaN(scale)) {
+      (document.body.style as any).zoom = `${scale}`;
+    }
+  }, []);
+
+  return null;
+}
+
 root.render(
   <StrictMode>
     <ErrorBoundary>
@@ -189,6 +202,7 @@ root.render(
             <GroupSyncer />
             <SettingsSyncer />
             <TheRouter>
+              <ZoomSetter />
               <MigrationRunner />
             </TheRouter>
           </ThemeProvider>

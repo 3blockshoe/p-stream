@@ -122,14 +122,6 @@ export function ScrapeErrorPart(props: ScrapeErrorPartProps) {
         <Paragraph>{t("player.scraping.notFound.text")}</Paragraph>
         <div className="flex gap-3">
           <Button
-            href="/"
-            theme="secondary"
-            padding="md:px-12 p-2.5"
-            className="mt-6"
-          >
-            {t("player.scraping.notFound.homeButton")}
-          </Button>
-          <Button
             onClick={() => modal.show()}
             theme="purple"
             padding="md:px-12 p-2.5"
@@ -137,6 +129,32 @@ export function ScrapeErrorPart(props: ScrapeErrorPartProps) {
           >
             {t("player.scraping.notFound.detailsButton")}
           </Button>
+          {(() => {
+            const backlink = new URLSearchParams(window.location.search).get(
+              "backlink",
+            );
+
+            // Only show backlink if it comes from URL parameter, and strip any quotes
+            if (backlink) {
+              // Remove any surrounding quotes from the URL
+              const cleanUrl = backlink.replace(/^["'](.*)["']$/, "$1");
+
+              return (
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.parent.location.href = cleanUrl;
+                  }}
+                  theme="secondary"
+                  padding="md:px-12 p-2.5"
+                  className="mt-6"
+                >
+                  {t("player.scraping.notFound.homeButton")}
+                </Button>
+              );
+            }
+            return null;
+          })()}
         </div>
         {/* <Button
           onClick={() => navigate("/discover")}

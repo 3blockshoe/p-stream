@@ -159,6 +159,21 @@ export function NextEpisodeButton(props: {
     setShouldStartFromBeginning(true);
     setDirectMeta(metaCopy);
     props.onChange?.(metaCopy);
+
+    // Send message to parent window about episode change
+    window.parent.postMessage(
+      {
+        type: "episodeChanged",
+        episodeNumber: nextEp.number,
+        seasonNumber: metaCopy.season?.number,
+        oldEpisodeNumber: meta?.episode?.number,
+        oldSeasonNumber: meta?.season?.number,
+        title: nextEp.title,
+        tmdbId: nextEp.tmdbId,
+      },
+      "*",
+    );
+
     const defaultProgress = { duration: 0, watched: 0 };
     updateItem({
       meta: metaCopy,
@@ -181,6 +196,19 @@ export function NextEpisodeButton(props: {
     setShouldStartFromBeginning(true);
     setDirectMeta(metaCopy);
     props.onChange?.(metaCopy);
+
+    // Send message to parent window about episode restart
+    window.parent.postMessage(
+      {
+        type: "episodeRestarted",
+        episodeNumber: meta.episode.number,
+        seasonNumber: meta.season?.number,
+        title: meta.episode.title,
+        tmdbId: meta.episode.tmdbId,
+      },
+      "*",
+    );
+
     const defaultProgress = { duration: 0, watched: 0 };
     updateItem({
       meta: metaCopy,

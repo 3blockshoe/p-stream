@@ -10,6 +10,8 @@ import {
 import { Menu } from "@/components/player/internals/ContextMenu";
 import { SelectableLink } from "@/components/player/internals/ContextMenu/Links";
 import { useOverlayRouter } from "@/hooks/useOverlayRouter";
+import { AnotherLink } from "@/pages/onboarding/utils";
+import { conf } from "@/setup/config";
 import { usePlayerStore } from "@/stores/player/store";
 
 export interface SourceSelectionViewProps {
@@ -144,21 +146,32 @@ export function SourceSelectionView({
 
   return (
     <>
-      <Menu.BackLink
-        onClick={() => router.navigate("/")}
-        rightSide={
-          <button
-            type="button"
-            onClick={() => window.open("/settings#source-order")}
-            className="-mr-2 -my-1 px-2 p-[0.4em] rounded tabbable hover:bg-video-context-light hover:bg-opacity-10"
-          >
-            {t("player.menus.sources.editOrder")}
-          </button>
-        }
-      >
+      <Menu.BackLink onClick={() => router.navigate("/")}>
         {t("player.menus.sources.title")}
       </Menu.BackLink>
-      <Menu.Section className="pb-4">
+      <Menu.Section>
+        {new URLSearchParams(window.location.search).get("fedapi") !==
+          "false" &&
+          conf().ALLOW_FEBBOX_KEY && (
+            <AnotherLink
+              to="/fed-api-setup"
+              id="settings/source"
+              className="text-type-link flex w-full pb-2"
+            >
+              <span>Setup Febbox API Key</span>
+            </AnotherLink>
+          )}
+        {new URLSearchParams(window.location.search).get("realdebrid") !==
+          "false" &&
+          conf().ALLOW_REAL_DEBRID_KEY && (
+            <AnotherLink
+              to="/realdebrid-setup"
+              id="settings/source"
+              className="text-type-link flex w-full pb-2"
+            >
+              <span>Setup RealDebrid</span>
+            </AnotherLink>
+          )}
         {sources.map((v) => (
           <SelectableLink
             key={v.id}

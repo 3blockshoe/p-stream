@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Icon, Icons } from "@/components/Icon";
 import { Heading2, Heading3, Paragraph } from "@/components/utils/Text";
+import { useOverlayRouter } from "@/hooks/useOverlayRouter";
 
 export function Card(props: {
   children?: React.ReactNode;
@@ -108,6 +109,38 @@ export function Link(props: {
     <a
       onClick={() => {
         if (props.to) navigate(props.to);
+      }}
+      href={props.href}
+      target={props.target}
+      className={classNames(
+        "text-onboarding-link cursor-pointer inline-flex gap-2 items-center group hover:opacity-75 transition-opacity",
+        props.className,
+      )}
+      rel="noreferrer"
+    >
+      {props.children}
+      <Icon
+        icon={Icons.ARROW_RIGHT}
+        className="group-hover:translate-x-0.5 transition-transform text-xl group-active:translate-x-0"
+      />
+    </a>
+  );
+}
+
+export function AnotherLink(props: {
+  children?: React.ReactNode;
+  to?: string;
+  href?: string;
+  className?: string;
+  target?: "_blank";
+  id: string;
+}) {
+  const router = useOverlayRouter(props.id);
+
+  return (
+    <a
+      onClick={() => {
+        if (props.to) router.navigate(props.to);
       }}
       href={props.href}
       target={props.target}
