@@ -100,6 +100,7 @@ export function useSourceScraping(sourceId: string | null, routerId: string) {
   const setSourceId = usePlayerStore((s) => s.setSourceId);
   const setEmbedId = usePlayerStore((s) => (s as any).setEmbedId);
   const progress = usePlayerStore((s) => s.progress.time);
+  const addFallbackStream = usePlayerStore((s) => s.addFallbackStream);
   const router = useOverlayRouter(routerId);
   const { report } = useReportProviders();
 
@@ -138,13 +139,15 @@ export function useSourceScraping(sourceId: string | null, routerId: string) {
 
     if (result.stream) {
       if (isExtensionActiveCached()) await prepareStream(result.stream[0]);
+
+      // Add to fallback streams
+      const stream = convertRunoutputToSource({ stream: result.stream[0] });
+      const captions = convertProviderCaption(result.stream[0].captions);
+      addFallbackStream(stream, captions, sourceId);
+
       setEmbedId(null);
       setCaption(null);
-      setSource(
-        convertRunoutputToSource({ stream: result.stream[0] }),
-        convertProviderCaption(result.stream[0].captions),
-        progress,
-      );
+      setSource(stream, captions, progress);
       setSourceId(sourceId);
       router.close();
       return null;
@@ -193,19 +196,23 @@ export function useSourceScraping(sourceId: string | null, routerId: string) {
           null,
         ),
       ]);
+
+      // Add to fallback streams
+      const stream = convertRunoutputToSource({
+        stream: embedResult.stream[0],
+      });
+      const captions = convertProviderCaption(embedResult.stream[0].captions);
+      addFallbackStream(stream, captions, sourceId, result.embeds[0].embedId);
+
       setSourceId(sourceId);
       setEmbedId(result.embeds[0].embedId);
       setCaption(null);
       if (isExtensionActiveCached()) await prepareStream(embedResult.stream[0]);
-      setSource(
-        convertRunoutputToSource({ stream: embedResult.stream[0] }),
-        convertProviderCaption(embedResult.stream[0].captions),
-        progress,
-      );
+      setSource(stream, captions, progress);
       router.close();
     }
     return result.embeds;
-  }, [sourceId, meta, router, setCaption]);
+  }, [sourceId, meta, router, setCaption, addFallbackStream]);
 
   return {
     run,

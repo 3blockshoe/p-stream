@@ -21,6 +21,7 @@ import {
   useListCenter,
   useScrape,
 } from "@/hooks/useProviderScrape";
+import { usePlayerStore } from "@/stores/player/store";
 
 import { WarningPart } from "../util/WarningPart";
 
@@ -38,6 +39,7 @@ export function ScrapingPart(props: ScrapingProps) {
   const { startScraping, sourceOrder, sources, currentSource } = useScrape();
   const isMounted = useMountedState();
   const { t } = useTranslation();
+  const clearFallbackStreams = usePlayerStore((s) => s.clearFallbackStreams);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -65,6 +67,9 @@ export function ScrapingPart(props: ScrapingProps) {
     if (started.current) return;
     started.current = true;
     (async () => {
+      // Clear any existing fallback streams
+      clearFallbackStreams();
+
       const output = await startScraping(props.media);
       if (!isMounted()) return;
       props.onResult?.(
@@ -80,7 +85,7 @@ export function ScrapingPart(props: ScrapingProps) {
       );
       props.onGetStream?.(output);
     })().catch(() => setFailedStartScrape(true));
-  }, [startScraping, props, report, isMounted]);
+  }, [startScraping, props, report, isMounted, clearFallbackStreams]);
 
   let currentProviderIndex = sourceOrder.findIndex(
     (s) => s.id === currentSource || s.children.includes(currentSource ?? ""),

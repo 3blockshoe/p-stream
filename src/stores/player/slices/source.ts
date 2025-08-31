@@ -73,6 +73,13 @@ export interface AudioTrack {
   language: string;
 }
 
+export interface FallbackStream {
+  stream: SourceSliceSource;
+  captions: CaptionListItem[];
+  sourceId: string;
+  embedId?: string;
+}
+
 export interface SourceSlice {
   status: PlayerStatus;
   source: SourceSliceSource | null;
@@ -88,6 +95,9 @@ export interface SourceSlice {
     asTrack: boolean;
   };
   meta: PlayerMeta | null;
+  // Fallback stream management
+  fallbackStreams: FallbackStream[];
+  currentStreamId: string | null;
   setStatus(status: PlayerStatus): void;
   setSource(
     stream: SourceSliceSource,
@@ -103,6 +113,16 @@ export interface SourceSlice {
   redisplaySource(startAt: number): void;
   setCaptionAsTrack(asTrack: boolean): void;
   addExternalSubtitles(): Promise<void>;
+  // Fallback stream methods
+  addFallbackStream(
+    stream: SourceSliceSource,
+    captions: CaptionListItem[],
+    sourceId: string,
+    embedId?: string,
+  ): void;
+  getFallbackStream(): FallbackStream | null;
+  removeCurrentStreamFromFallbacks(): void;
+  clearFallbackStreams(): void;
 }
 
 export function metaToScrapeMedia(meta: PlayerMeta): ScrapeMedia {
@@ -143,6 +163,9 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
     selected: null,
     asTrack: false,
   },
+  // Fallback stream management
+  fallbackStreams: [],
+  currentStreamId: null,
   setSourceId(id) {
     set((s) => {
       s.status = playerStatus.PLAYING;
@@ -183,6 +206,9 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
     const qualityPreferences = useQualityStore.getState();
     const loadableStream = selectQuality(stream, qualityPreferences.quality);
 
+    // Generate a unique ID for this stream
+    const streamId = `${Date.now()}-${Math.random()}`;
+
     set((s) => {
       s.source = stream;
       s.qualities = qualities as SourceQuality[];
@@ -192,6 +218,7 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
       s.status = playerStatus.PLAYING;
       s.audioTracks = [];
       s.currentAudioTrack = null;
+      s.currentStreamId = streamId;
     });
     const store = get();
     store.redisplaySource(startAt);
@@ -276,5 +303,68 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
     } catch (error) {
       console.error("Failed to scrape external subtitles:", error);
     }
+  },
+  // Fallback stream methods
+  addFallbackStream(
+    stream: SourceSliceSource,
+    captions: CaptionListItem[],
+    sourceId: string,
+    embedId?: string,
+  ) {
+    const store = get();
+    // Don't add if it's the same as current stream
+    if (store.currentStreamId) {
+      const currentStream = store.fallbackStreams.find(
+        (fs) => fs.sourceId === sourceId && fs.embedId === embedId,
+      );
+      if (currentStream) {
+        console.log(
+          "Stream already exists in fallbacks, skipping:",
+          sourceId,
+          embedId,
+        );
+        return; // Already have this stream
+      }
+    }
+
+    console.log("Adding fallback stream from:", sourceId, "embedId:", embedId);
+    set((s) => {
+      s.fallbackStreams.push({
+        stream,
+        captions,
+        sourceId,
+        embedId,
+      });
+    });
+    console.log("Total fallback streams:", store.fallbackStreams.length + 1);
+  },
+  getFallbackStream(): FallbackStream | null {
+    const store = get();
+    if (store.fallbackStreams.length === 0) return null;
+    return store.fallbackStreams[0];
+  },
+  removeCurrentStreamFromFallbacks() {
+    const store = get();
+    if (!store.currentStreamId) return;
+
+    console.log(
+      "Removing current stream from fallbacks:",
+      store.sourceId,
+      store.embedId,
+    );
+    set((s) => {
+      // Remove the current stream from fallbacks to avoid loading the broken one again
+      s.fallbackStreams = s.fallbackStreams.filter(
+        (fs) => !(fs.sourceId === s.sourceId && fs.embedId === s.embedId),
+      );
+    });
+    console.log("Remaining fallback streams:", store.fallbackStreams.length);
+  },
+  clearFallbackStreams() {
+    console.log("Clearing all fallback streams");
+    set((s) => {
+      s.fallbackStreams = [];
+      s.currentStreamId = null;
+    });
   },
 });

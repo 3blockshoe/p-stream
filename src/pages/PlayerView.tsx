@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { RunOutput } from "@p-stream/providers";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -153,12 +154,80 @@ export function RealPlayerView() {
         shouldStartFromBeginning ? 0 : startAt,
       );
       setShouldStartFromBeginning(false);
+
+      // Start background scraping for fallback streams
+      // This runs asynchronously and won't block the UI
+      setTimeout(async () => {
+        if (!scrapeMedia) return;
+        try {
+          // Use the providers directly for background scraping
+          const { getProviders } = await import(
+            "@/backend/providers/providers"
+          );
+          const { getLoadbalancedProviderApiUrl } = await import(
+            "@/backend/providers/fetchers"
+          );
+          const { isExtensionActiveCached } = await import(
+            "@/backend/extension/messaging"
+          );
+          const { connectServerSideEvents, makeProviderUrl } = await import(
+            "@/backend/helpers/providerApi"
+          );
+          const { prepareStream } = await import("@/backend/extension/streams");
+          const { usePlayerStore } = await import("@/stores/player/store");
+
+          const addFallbackStream = usePlayerStore.getState().addFallbackStream;
+          const providerApiUrl = getLoadbalancedProviderApiUrl();
+
+          if (providerApiUrl && !isExtensionActiveCached()) {
+            // Use SSE for background scraping
+            const baseUrlMaker = makeProviderUrl(providerApiUrl);
+            const conn = await connectServerSideEvents<RunOutput | "">(
+              baseUrlMaker.scrapeAll(scrapeMedia),
+              ["completed", "noOutput"],
+            );
+            const sseOutput = await conn.promise();
+            if (sseOutput && typeof sseOutput !== "string") {
+              if (isExtensionActiveCached())
+                await prepareStream(sseOutput.stream);
+              const stream = convertRunoutputToSource(sseOutput);
+              const captions = convertProviderCaption(
+                sseOutput.stream.captions,
+              );
+              addFallbackStream(stream, captions, sseOutput.sourceId);
+              console.log("Background scraping completed for fallback streams");
+            }
+          } else {
+            // Use local providers for background scraping
+            const providers = getProviders();
+            const output = await providers.runAll({
+              media: scrapeMedia,
+              events: {
+                init: () => {},
+                start: () => {},
+                update: () => {},
+                discoverEmbeds: () => {},
+              },
+            });
+            if (output) {
+              if (isExtensionActiveCached()) await prepareStream(output.stream);
+              const stream = convertRunoutputToSource(output);
+              const captions = convertProviderCaption(output.stream.captions);
+              addFallbackStream(stream, captions, output.sourceId);
+              console.log("Background scraping completed for fallback streams");
+            }
+          }
+        } catch (error) {
+          console.log("Background scraping failed:", error);
+        }
+      }, 2000); // Wait 2 seconds before starting background scraping
     },
     [
       playMedia,
       startAtParam,
       shouldStartFromBeginning,
       setShouldStartFromBeginning,
+      scrapeMedia,
     ],
   );
 
